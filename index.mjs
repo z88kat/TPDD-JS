@@ -4,6 +4,12 @@
  * Make sure to install the 'serialport' library using npm:
  * npm install serialport
  */
+import terminalKitPackage from 'terminal-kit';
+const {
+    terminal
+} = terminalKitPackage;
+import colors from 'colors/safe.js'; // Use colors/safe.js for safe color usage
+import serial from './serial.mjs';
 import {
     SerialPort
 } from 'serialport';
@@ -14,10 +20,24 @@ import {
     InterByteTimeoutParser
 } from '@serialport/parser-inter-byte-timeout';
 // ls -la /dev/tty.usbserial*
+
+colors.setTheme({
+    silly: 'rainbow',
+    input: 'grey',
+    verbose: 'cyan',
+    prompt: 'grey',
+    info: 'green',
+    data: 'grey',
+    help: 'cyan',
+    warn: 'yellow',
+    debug: 'blue',
+    error: 'red'
+});
+
 const portName = '/dev/tty.usbserial-FTAKH8S5'; // Change this to your serial port name
 let baudRate = 19200; // Change this to your baud rate
 
-
+/*
 // ...existing code...
 const port = new SerialPort({
     path: portName,
@@ -30,31 +50,32 @@ const port = new SerialPort({
     rts: true, // Request to Send
     dtr: true // Data Terminal Ready
 });
+*/
 
 
 // On the serial port send 4 times CR and then read data from it
-port.on('open', () => {
-    console.log(`Serial port ${portName} opened at ${baudRate} baud.`);
+//port.on('open', () => {
+//  console.log(`Serial port ${portName} opened at ${baudRate} baud.`);
 
-    /*
-        // Send 4 carriage returns (CR)
-        for (let i = 0; i < 4; i++) {
-            port.write('\r', (err) => {
-                if (err) {
-                    return console.error('Error writing to port:', err.message);
-                }
-                console.log('Sent CR');
-            });
-        }
+/*
+    // Send 4 carriage returns (CR)
+    for (let i = 0; i < 4; i++) {
+        port.write('\r', (err) => {
+            if (err) {
+                return console.error('Error writing to port:', err.message);
+            }
+            console.log('Sent CR');
+        });
+    }
 
-        // Wait 1 second before sending the DIR command
-        setTimeout(() => {
-            console.log('Sending DIR command...');
-            sendDirCommand(); // Send the DIR command
-        }, 1000);
-    */
-});
-
+    // Wait 1 second before sending the DIR command
+    setTimeout(() => {
+        console.log('Sending DIR command...');
+        sendDirCommand(); // Send the DIR command
+    }, 1000);
+*/
+//});
+/*
 // Handle the 'close' event
 port.on('close', () => {
     console.log(`Serial port ${portName} closed.`);
@@ -80,7 +101,7 @@ port.on('error', (err) => {
 });
 // ...existing code...
 
-
+*/
 
 const sendDirCommand = () => {
     const dir = 'DIR'; // Replace with the actual command you want to send
@@ -94,7 +115,7 @@ const sendDirCommand = () => {
 }
 
 // Read from the command line arguments
-const args = process.argv.slice(2);
+const args = process.argv.slice(2); // eslint-disable-line
 if (args.length > 0) {
     const command = args[0].toUpperCase();
     if (command === 'DIR') {
@@ -240,7 +261,8 @@ const sendDirectoryCommand = (request, filename) => {
 }
 // Example usage
 //sendDirectoryCommand(''); // Replace with the actual filename you want to request
-
+//
+/*
 setTimeout(() => {
     console.log('Sending status command...', driveConditionCommand());
     let command = directoryCommand(); // Send the first directory command
@@ -254,3 +276,93 @@ setTimeout(() => {
         console.log(`Sent command`);
     });
 }, 3000); // Wait 3 seconds before sending the command
+*/
+
+/**
+ * Create a new terminal-kit menubar with the specified options
+ */
+const createSingleLineMenu = () => {
+    terminal.clear();
+    terminal.hideCursor();
+    terminal.moveTo(1, 1);
+    terminal(`Welcome to the TPDD Base Protocol Terminal\n`);
+    terminal(`Press 'c' to connect, 'd' to disconnect, or 'q' to quit.\n`);
+
+    // Create a single line menu
+    terminal.singleLineMenu(['Connect', 'Exit'], (error, response) => {
+        if (error) {
+            console.error('Error creating menu:', error);
+            return;
+        }
+        console.log(`You selected: ${response.selectedText}`);
+        // Handle menu selection here
+        if (response.selectedText === 'Connect') {
+            // Handle connect to serial port
+            serial.openSerialPort(portName, baudRate)
+        } else if (response.selectedText === 'Exit') {
+            // Handle Help menu
+        }
+    });
+    terminal.on('key', (name) => {
+        if (name === 'q') {
+            terminal.clear();
+            terminal.hideCursor(false);
+            terminal(`Exiting...\n`);
+            serial.closeSerialPort();
+            process.exit(0); // eslint-disable-line
+        }
+        if (name === 'c') {
+            // Handle connect key
+            serial.openSerialPort(portName, baudRate);
+        }
+        if (name === 'd') {
+            // Handle disconnect key
+            serial.closeSerialPort();
+        }
+        // drive status
+        if (name === 's') {
+            // Handle status key
+            serial.sendDriveCondition();
+        }
+    });
+    terminal.on('resize', () => {
+        terminal.clear();
+        terminal.moveTo(1, 1);
+        terminal(`Welcome to the TPDD Base Protocol Terminal\n`);
+        terminal(`Press 'q' to quit.\n`);
+        createSingleLineMenu(); // Recreate the menu on resize
+    });
+    terminal.on('mouse', (name, data) => {
+        if (name === 'MOUSE_LEFT_BUTTON_PRESSED') {
+            console.log(`Mouse clicked at: ${data.x}, ${data.y}`);
+            // Handle mouse click
+        }
+    });
+    terminal.on('mouseWheel', (name, data) => {
+        console.log(`Mouse wheel scrolled: ${data.direction}`);
+        // Handle mouse wheel scroll
+    });
+    terminal.on('key', (name) => {
+        if (name === 'CTRL_C') {
+            terminal.clear();
+            terminal.hideCursor(false);
+            terminal(`Exiting...\n`);
+            process.exit(0); // eslint-disable-line
+        }
+    });
+}
+
+const start = async () => {
+    terminal.clear();
+    terminal(`Starting serial port communication on ${portName} at ${baudRate} baud...\n`);
+    console.log(colors.silly(`Starting serial port communication on ${portName} at ${baudRate} baud...`));
+
+    // Create a new terminal-kit menubar with the specified options
+    createSingleLineMenu();
+
+};
+
+
+start().catch((err) => {
+    console.error('Error in start function:', err);
+});

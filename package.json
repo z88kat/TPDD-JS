@@ -11,6 +11,13 @@
   "description": "",
   "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
   "dependencies": {
-    "serialport": "^13.0.0"
+    "colors": "^1.4.0",
+    "serialport": "^13.0.0",
+    "terminal-kit": "^3.1.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "globals": "^16.2.0"
   }
 }
