@@ -10,7 +10,8 @@ import {
 } from '@serialport/parser-inter-byte-timeout';
 import terminalKitPackage from 'terminal-kit';
 import {
-    RESPONSE_TYPE
+    RESPONSE_TYPE,
+    RETURN_TYPE
 } from './constants.mjs'; // Adjust the import path as necessary
 const {
     terminal
@@ -48,6 +49,22 @@ const openSerialPort = async (portName = '/dev/tty.usbserial-FTAKH8S5', baudRate
             handleSerialData(port); // Start handling data once the port is open
             sendWakeUp(); // Send a wake-up signal to the device
         });
+        // Add signal listener
+        port.on('signals', (signals) => {
+            terminal(`Serial port signals changed:\n`);
+            // CTS (Clear To Send), DSR (Data Set Ready), DCD (Data Carrier Detect), RI (Ring Indicator)
+            // These signals are boolean values indicating the state of the respective signal.
+            // You can use these signals to check the status of the serial port.
+            // For example, you can check if the CTS signal is high (true) or low (false).
+            // terminal(`CTS: ${signals.cts}, DSR: ${signals.dsr}, DCD: ${signals.dcd}, RI: ${signals.ri}\n`);
+            // You can also use these signals to control the flow of data.
+            // For example, you can use the CTS signal to control the flow of data.
+            // If the CTS signal is low (false), you can stop sending data.
+            // If the CTS signal is high (true), you can continue sending data.
+            // This is useful for controlling the flow of data in a serial communication.
+            terminal(`CTS: ${signals.cts}, DSR: ${signals.dsr}, DCD: ${signals.dcd}, RI: ${signals.ri}\n`);
+        });
+
     } catch (error) {
         console.error(`Error opening serial port ${portName}:`, error);
         throw error; // Re-throw the error for further handling
@@ -92,7 +109,7 @@ const handleSerialData = (port) => {
     // Listen for data events
     parser.on('data', (data) => {
         handleResponse(data);
-        console.log('Received:', data);
+        //console.log('Received:', data);
     });
 }
 
@@ -193,8 +210,11 @@ const handleResponse = (bufferArray) => {
     console.log(`Response Type: ${responseTypeHex}`);
 
     switch (responseTypeHex) {
-        case 0x15: // DRIVE_CONDITION
-            terminal(`Received DRIVE_CONDITION response: ${RESPONSE_TYPE[responseType]}\n`);
+        case RETURN_TYPE.DRIVE_CONDITION: // DRIVE_CONDITION
+
+            // terminal move to the end of the terminal
+            terminal.moveTo(1, terminal.height);
+            terminal.green(`Drive is healthy`);
             // Handle DRIVE_CONDITION response
             break;
         case 0x12: // OPEN_FILE, CLOSE_FILE, READ_FILE, WRITE_FILE, DELETE_FILE, FORMAT_DISK, DRIVE_STATUS, RENAME_FILE
