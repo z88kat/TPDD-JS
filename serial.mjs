@@ -27,7 +27,7 @@ let port;
  * @param {number} baudRate - The baud rate for the serial communication (default: 9600).
  * @returns {Promise<void>} A promise that resolves when the port is opened successfully.
  */
-const openSerialPort = async (portName = '/dev/tty.usbserial-FTAKH8S5', baudRate = 9600) => {
+const openSerialPort = async (portName = '/dev/tty.usbserial-FTAKH8S5', baudRate = 9600) => { // ls -la /dev/tty.usbserial*
 
 
     try {
@@ -63,6 +63,11 @@ const openSerialPort = async (portName = '/dev/tty.usbserial-FTAKH8S5', baudRate
             // If the CTS signal is high (true), you can continue sending data.
             // This is useful for controlling the flow of data in a serial communication.
             terminal(`CTS: ${signals.cts}, DSR: ${signals.dsr}, DCD: ${signals.dcd}, RI: ${signals.ri}\n`);
+        });
+
+        // Add the drain event listener
+        port.on('drain', () => {
+            terminal(`Serial port ${port.path} is drained.\n`);
         });
 
     } catch (error) {

@@ -357,8 +357,20 @@ const start = async () => {
     terminal(`Starting serial port communication on ${portName} at ${baudRate} baud...\n`);
     console.log(colors.silly(`Starting serial port communication on ${portName} at ${baudRate} baud...`));
 
+
     // Create a new terminal-kit menubar with the specified options
     createSingleLineMenu();
+
+    // Move to center of the terminal
+    terminal.moveTo(1, 10);
+
+    let ports = await SerialPort.list();
+
+    // display a list of available serial ports
+    terminal.green('Available Serial Ports:\n');
+    ports.forEach((port) => {
+        terminal.green(`Port: ${port.path}, Manufacturer: ${port.manufacturer || 'N/A'}, Serial Number: ${port.serialNumber || 'N/A'}\n`);
+    });
 
 };
 
